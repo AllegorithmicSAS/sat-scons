@@ -124,8 +124,8 @@ def sbs_scan(node, env, path, arg=None):
     sbsDoc = substance.SBSDocument(sbs_context, str(node))
     sbsDoc.parseDoc()
     dependencies = sbsDoc.getDependencyPathList(aRecurseOnPackages=True)
-    return dependencies
-
+    resources = sbsDoc.getResourcePathList()
+    return dependencies + resources
 
 # Set up the sbs_scanner
 sbs_scanner = Scanner(function=sbs_scan,
