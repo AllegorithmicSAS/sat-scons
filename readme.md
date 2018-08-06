@@ -59,13 +59,13 @@ Don't forget to restart your command prompt window after you changed the path.
 
 If you prefer to not update your path you can also run scons directly from the scripts directory.
 In the event you use Python2.7 on windows the command would look something like this assuming python is installed in the directory
-```C:\Python27```
-```
+```C:\Python27
 PS C:\work\Allegorithmic\code> C:\Python27\Scripts\scons.bat
 
 scons: *** No SConstruct file found.
 File "c:\python27\lib\site-packages\scons-3.0.1\SCons\Script\Main.py", line 924, in _main
 ```
+
 In the examples below we will assume scons is in your system path.
 ## The sample directory
 When you get hold of the sample directory looks something like:
