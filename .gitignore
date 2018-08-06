@@ -1,0 +1,5 @@
+.sconsign.dblite
+*.pyc
+output/*
+temp/*
+.idea/*
