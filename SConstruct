@@ -118,14 +118,38 @@ def inject_thumbnail(env, target, source):
     return None
 
 
+_dependencies = {}
+
+# Find all dependencies recursively storing results recursively to
+# _dependencies to avoid rescanning the same file multiple times when dealing with
+# multiple targets sharing dependencies
+def _scan_recursive(filename):
+    ext = os.path.splitext(filename)[1]
+    merged_dep = set()
+    # Only scan sbs dependencies, assume everything else is self contained
+    if ext.lower() == '.sbs':
+        print('Scanning %s' % str(filename))
+        sbsDoc = substance.SBSDocument(sbs_context, str(filename))
+        sbsDoc.parseDoc()
+        # Get resources and dependencies this file depends on
+        dependencies = sbsDoc.getDependencyPathList(aRecurseOnPackages=False)
+        resources = sbsDoc.getResourcePathList()
+        all_dep = dependencies + resources
+        merged_dep = set(all_dep)
+        # Recursively add all dependencies for dependencies
+        for dep in all_dep:
+            if dep not in _dependencies:
+                _scan_recursive(dep)
+            merged_dep = merged_dep.union(_dependencies[dep])
+    _dependencies[filename] = merged_dep
+
 # Scanner identifying dependencies from an sbs file
 def sbs_scan(node, env, path, arg=None):
-    print('Scanning %s' % str(node))
-    sbsDoc = substance.SBSDocument(sbs_context, str(node))
-    sbsDoc.parseDoc()
-    dependencies = sbsDoc.getDependencyPathList(aRecurseOnPackages=True)
-    resources = sbsDoc.getResourcePathList()
-    return dependencies + resources
+    filename = str(node)
+    # Scan dependencies if we haven't seen this file
+    if filename not in _dependencies:
+        _scan_recursive(filename)
+    return list(_dependencies[filename])
 
 # Set up the sbs_scanner
 sbs_scanner = Scanner(function=sbs_scan,
