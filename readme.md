@@ -49,7 +49,7 @@ from the console like this:
 PS C:\code> scons
 
 scons: *** No SConstruct file found.
-File "c:\python27\lib\site-packages\scons-3.0.1\SCons\Script\Main.py", line 924, in _main```
+File "c:\python27\lib\site-packages\scons-3.0.1\SCons\Script\Main.py", line 924, in _main
 ```
 
 If the scripts directory is not in path you can either add it to the path. Look here
