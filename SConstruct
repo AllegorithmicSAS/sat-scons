@@ -30,6 +30,8 @@ IGNORE_LIST = {'common_dependencies',
 TEMP_DIR = 'temp'
 OUTPUT_DIR = 'output/sbsar'
 THUMBNAIL_DUMP = 'output/thumbnails'
+THUMBNAIL_RESOLUTION = [256, 256]
+MAP_RESOLUTION = 10
 SRC_DIR = "data"
 
 print('Found Arnold: %r' % ARNOLD_FOUND)
@@ -190,7 +192,7 @@ def process_sbs(src):
             all_maps = render_maps(env,
                                    cooked_sbsar[0],
                                    ['basecolor', 'normal', 'roughness', 'metallic'],
-                                   11)
+                                   MAP_RESOLUTION)
 
             # Render thumbnails
             thumbnail_node = env.render_thumbnail(thumbnail_path,
@@ -198,7 +200,7 @@ def process_sbs(src):
                                                    all_maps['normal'],
                                                    all_maps['roughness'],
                                                    all_maps['metallic']],
-                                                  RESOLUTION=[256, 256])
+                                                  RESOLUTION=THUMBNAIL_RESOLUTION)
 
             # Dump the thumbnail to the thumbnail directory
             env.cp(os.path.join(THUMBNAIL_DUMP, os.path.basename(str(thumbnail_node[0]))), thumbnail_node)
