@@ -21,6 +21,15 @@ on Linux or macOS with no or few modifications.
 If you don't already have a working Python installation, go here
 [https://www.python.org/about/gettingstarted/] to learn how to download and install it.
 
+### Install Substance Automation Toolkit
+
+In order to get access to the Substance Automation toolkit you need a valid subscription
+of Substance Designer Indie or a valid Pro license for Substance Automation Toolkit.
+
+The installation instructions for the SAT is available here:
+[https://support.allegorithmic.com/documentation/display/SAT/Setup+and+Getting+Started]
+
+
 ### Install Python requirements
 
 Before starting you need to install SCons and pathlib for your Python installation. This
@@ -36,7 +45,7 @@ pip install pathlib
 If pip is not in path you will need to run something along the lines of:
 ```
 python -m pip install scons
-python -m pip install scons
+python -m pip install pathlib
 ```
 
 Depending on how your installation is set up it might need to be run from an administrator 
