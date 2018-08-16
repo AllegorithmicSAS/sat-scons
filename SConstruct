@@ -96,9 +96,7 @@ def render(env, target, source):
                                              output_name=strip_directory_and_extension(dest_filename),
                                              input_graph_output=map,
                                              set_value=['$outputsize@%d,%d' % (resolution, resolution)],
-                                             engine='d3d10pc',
-                                             png_format_compression='none'
-                                             ).wait()
+                                             png_format_compression='none').wait()
     return render_res
 
 
