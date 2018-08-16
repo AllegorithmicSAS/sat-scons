@@ -183,7 +183,7 @@ sbs_scanner = Scanner(function=sbs_scan,
 env = Environment(
     BUILDERS={
         # Copy builder
-        'cp': Builder(action='copy $SOURCE $TARGET'),
+        'cp': Builder(action=Copy("$TARGET", "$SOURCE")),
         # Cooking with scanning
         'cook_scan': Builder(action=Action(cook_sbs),
                              source_scanner=sbs_scanner),
@@ -205,7 +205,7 @@ env = Environment(
 
 # Create targets for rendering all the maps needed to render a thumbnail
 def render_maps(env, src_node, maps_to_render, resolution):
-    p = pathlib.WindowsPath(str(src_node))
+    p = pathlib.PurePath(str(src_node))
     split_path = list(p.parts)
     res = {}
     for m in maps_to_render:
