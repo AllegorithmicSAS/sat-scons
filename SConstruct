@@ -7,7 +7,7 @@ import os.path
 import pathlib
 
 
-def detect_arnold_installation(arnold_roots):
+def detect_arnold_installation(arnold_roots, min_arnold_version):
     for p in arnold_roots:
         script_path = os.path.join(p, 'scripts')
         bin_path = os.path.join(p, 'bin')
@@ -15,14 +15,22 @@ def detect_arnold_installation(arnold_roots):
         if os.path.isdir(script_path) and os.path.isdir(bin_path) and os.path.isdir(shader_path):
             sys.path.insert(0, script_path)
             os.environ['PATH'] = os.environ['PATH'] + ';' + bin_path
+            from arnold import AiGetVersion
+            major_arnold_version = int(AiGetVersion()[0])
+            if major_arnold_version < min_arnold_version:
+                print('Found Arnold version %d. This sample requires %d' % (major_arnold_version, min_arnold_version))
+                return (False, '')
             return (True, shader_path)
+    print('No Arnold installation found. If this is unexpected, make sure the arnold_roots variable points'\
+          'to the right location')
     return (False, '')
 
 
-arnold_roots = ['C:/solidangle/mtoadeploy/2017']
-
+ARNOLD_ROOTS = ['C:/solidangle/mtoadeploy/2017',
+                'C:/solidangle/mtoadeploy/2018']
+MINIMUM_ARNOLD_VERSION = 5
 # Configuration globals
-ARNOLD_FOUND, ARNOLD_SHADER_PATH = detect_arnold_installation(arnold_roots)
+ARNOLD_FOUND, ARNOLD_SHADER_PATH = detect_arnold_installation(ARNOLD_ROOTS, MINIMUM_ARNOLD_VERSION)
 # Directories to ignore to avoid errors
 IGNORE_LIST = {'common_dependencies',
                'dependencies',
