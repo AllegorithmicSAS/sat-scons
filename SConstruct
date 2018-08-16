@@ -26,15 +26,19 @@ def detect_arnold_installation(arnold_roots, min_arnold_version):
     return (False, '')
 
 
+#
+# Configuration globals
+#
+
 ARNOLD_ROOTS = ['C:/solidangle/mtoadeploy/2017',
                 'C:/solidangle/mtoadeploy/2018']
 MINIMUM_ARNOLD_VERSION = 5
-# Configuration globals
-ARNOLD_FOUND, ARNOLD_SHADER_PATH = detect_arnold_installation(ARNOLD_ROOTS, MINIMUM_ARNOLD_VERSION)
+
 # Directories to ignore to avoid errors
 IGNORE_LIST = {'common_dependencies',
                'dependencies',
                '.autosave'}
+
 TEMP_DIR = 'temp'
 OUTPUT_DIR = 'output/sbsar'
 THUMBNAIL_DUMP = 'output/thumbnails'
@@ -42,9 +46,13 @@ THUMBNAIL_RESOLUTION = [256, 256]
 MAP_RESOLUTION = 10
 SRC_DIR = "data"
 
-print('Found Arnold: %r' % ARNOLD_FOUND)
-if ARNOLD_FOUND:
-    from arnold_python import render_arnold
+# ARNOLD_FOUND, ARNOLD_SHADER_PATH = detect_arnold_installation(ARNOLD_ROOTS, MINIMUM_ARNOLD_VERSION)
+# print('Found Arnold: %r' % ARNOLD_FOUND)
+# if ARNOLD_FOUND:
+#     from arnold_python import render_arnold
+
+from appleseed_python import render_appleseed
+
 
 # Configure scons for faster dependency scanning (makes a difference on large libraries)
 
@@ -94,15 +102,25 @@ def render(env, target, source):
     return render_res
 
 
-# Scons thumbnail renderer using arnold
-def render_thumbnail_arnold(env, target, source):
-    return render_arnold(target_file=str(target[0]),
-                         base_color_tex=str(source[0]),
-                         normal_tex=str(source[1]),
-                         roughness_tex=str(source[2]),
-                         metallic_tex=str(source[3]),
-                         resolution=env['RESOLUTION'],
-                         shader_path=ARNOLD_SHADER_PATH)
+# Scons thumbnail renderer using Arnold
+# def render_thumbnail_arnold(env, target, source):
+#     return render_arnold(target_file=str(target[0]),
+#                          base_color_tex=str(source[0]),
+#                          normal_tex=str(source[1]),
+#                          roughness_tex=str(source[2]),
+#                          metallic_tex=str(source[3]),
+#                          resolution=env['RESOLUTION'],
+#                          shader_path=ARNOLD_SHADER_PATH)
+
+
+# Scons thumbnail renderer using appleseed
+def render_thumbnail_appleseed(env, target, source):
+    return render_appleseed(target_file=str(target[0]),
+                            base_color_tex=os.path.basename(str(source[0])),
+                            normal_tex=os.path.basename(str(source[1])),
+                            roughness_tex=os.path.basename(str(source[2])),
+                            metallic_tex=os.path.basename(str(source[3])),
+                            resolution=env['RESOLUTION'])
 
 
 # Scons builder injecting a thumbnail into an sbs file
@@ -177,8 +195,11 @@ env = Environment(
         'render': Builder(action=Action(render,
                                         varlist=['RESOLUTION', 'MAP'])),
         # Render a thumbnail
-        'render_thumbnail': Builder(action=Action(render_thumbnail_arnold,
+        # 'render_thumbnail': Builder(action=Action(render_thumbnail_arnold,
+        #                                           varlist=['RESOLUTION'])),
+        'render_thumbnail': Builder(action=Action(render_thumbnail_appleseed,
                                                   varlist=['RESOLUTION'])),
+
         # Injecting a thumbnail into an sbs file
         'inject_thumbnail': Builder(action=Action(inject_thumbnail))
     })
@@ -219,7 +240,8 @@ def process_sbs(src):
         # Cooks sbs to sbsar for for rendering maps
         cooked_sbsar = env.cook_scan(cooked_dest, src)
 
-        if ARNOLD_FOUND:
+        # if ARNOLD_FOUND:
+        if True:
             # Render out all maps needed for thumbnail rendering
             all_maps = render_maps(env,
                                    cooked_sbsar[0],
