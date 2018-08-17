@@ -30,9 +30,8 @@ def detect_arnold_installation(arnold_roots, min_arnold_version):
 # Configuration globals
 #
 
-ARNOLD_ROOTS = ['C:/solidangle/mtoadeploy/2017',
-                'C:/solidangle/mtoadeploy/2018']
-MINIMUM_ARNOLD_VERSION = 5
+# If true, use Arnold for rendering, otherwise use appleseed.
+FORCE_ARNOLD = False
 
 # Directories to ignore to avoid errors
 IGNORE_LIST = {'common_dependencies',
@@ -46,12 +45,18 @@ THUMBNAIL_RESOLUTION = [256, 256]
 MAP_RESOLUTION = 10
 SRC_DIR = "data"
 
-# ARNOLD_FOUND, ARNOLD_SHADER_PATH = detect_arnold_installation(ARNOLD_ROOTS, MINIMUM_ARNOLD_VERSION)
-# print('Found Arnold: %r' % ARNOLD_FOUND)
-# if ARNOLD_FOUND:
-#     from arnold_python import render_arnold
+if FORCE_ARNOLD:
+    ARNOLD_ROOTS = ['C:/solidangle/mtoadeploy/2017',
+                    'C:/solidangle/mtoadeploy/2018']
+    MINIMUM_ARNOLD_VERSION = 5
 
-from appleseed_python import render_appleseed
+    ARNOLD_FOUND, ARNOLD_SHADER_PATH = detect_arnold_installation(ARNOLD_ROOTS, MINIMUM_ARNOLD_VERSION)
+    print('Found Arnold: %r' % ARNOLD_FOUND)
+
+    if ARNOLD_FOUND:
+        from arnold_python import render_arnold
+else:
+    from appleseed_python import render_appleseed
 
 
 # Configure scons for faster dependency scanning (makes a difference on large libraries)
@@ -101,14 +106,14 @@ def render(env, target, source):
 
 
 # Scons thumbnail renderer using Arnold
-# def render_thumbnail_arnold(env, target, source):
-#     return render_arnold(target_file=str(target[0]),
-#                          base_color_tex=str(source[0]),
-#                          normal_tex=str(source[1]),
-#                          roughness_tex=str(source[2]),
-#                          metallic_tex=str(source[3]),
-#                          resolution=env['RESOLUTION'],
-#                          shader_path=ARNOLD_SHADER_PATH)
+def render_thumbnail_arnold(env, target, source):
+    return render_arnold(target_file=str(target[0]),
+                         base_color_tex=str(source[0]),
+                         normal_tex=str(source[1]),
+                         roughness_tex=str(source[2]),
+                         metallic_tex=str(source[3]),
+                         resolution=env['RESOLUTION'],
+                         shader_path=ARNOLD_SHADER_PATH)
 
 
 # Scons thumbnail renderer using appleseed
@@ -196,9 +201,7 @@ env = Environment(
         'render': Builder(action=Action(render,
                                         varlist=['RESOLUTION', 'MAP'])),
         # Render a thumbnail
-        # 'render_thumbnail': Builder(action=Action(render_thumbnail_arnold,
-        #                                           varlist=['RESOLUTION'])),
-        'render_thumbnail': Builder(action=Action(render_thumbnail_appleseed,
+        'render_thumbnail': Builder(action=Action(render_thumbnail_arnold if FORCE_ARNOLD else render_thumbnail_appleseed,
                                                   varlist=['RESOLUTION'])),
 
         # Injecting a thumbnail into an sbs file
@@ -241,36 +244,31 @@ def process_sbs(src):
         # Cooks sbs to sbsar for for rendering maps
         cooked_sbsar = env.cook_scan(cooked_dest, src)
 
-        # if ARNOLD_FOUND:
-        if True:
-            # Render out all maps needed for thumbnail rendering
-            all_maps = render_maps(env,
-                                   cooked_sbsar[0],
-                                   ['basecolor', 'normal', 'roughness', 'metallic'],
-                                   MAP_RESOLUTION)
+        # Render out all maps needed for thumbnail rendering
+        all_maps = render_maps(env,
+                               cooked_sbsar[0],
+                               ['basecolor', 'normal', 'roughness', 'metallic'],
+                               MAP_RESOLUTION)
 
-            # Render thumbnails
-            thumbnail_node = env.render_thumbnail(thumbnail_path,
-                                                  [all_maps['basecolor'],
-                                                   all_maps['normal'],
-                                                   all_maps['roughness'],
-                                                   all_maps['metallic']],
-                                                  RESOLUTION=THUMBNAIL_RESOLUTION)
+        # Render thumbnails
+        thumbnail_node = env.render_thumbnail(thumbnail_path,
+                                              [all_maps['basecolor'],
+                                               all_maps['normal'],
+                                               all_maps['roughness'],
+                                               all_maps['metallic']],
+                                              RESOLUTION=THUMBNAIL_RESOLUTION)
 
-            # Dump the thumbnail to the thumbnail directory
-            env.cp(os.path.join(THUMBNAIL_DUMP, os.path.basename(str(thumbnail_node[0]))), thumbnail_node)
+        # Dump the thumbnail to the thumbnail directory
+        env.cp(os.path.join(THUMBNAIL_DUMP, os.path.basename(str(thumbnail_node[0]))), thumbnail_node)
 
-            # Now embed the thumbnail file as a thumbnail in the updated sbs and store it
-            # as the target sbs
-            # Note that the updated dependencies are copied directly since they have no
-            # thumbnail
-            thumb_sbs = env.inject_thumbnail(temp_sbs, [src, thumbnail_node[0]])
+        # Now embed the thumbnail file as a thumbnail in the updated sbs and store it
+        # as the target sbs
+        # Note that the updated dependencies are copied directly since they have no
+        # thumbnail
+        thumb_sbs = env.inject_thumbnail(temp_sbs, [src, thumbnail_node[0]])
 
-            # Cook the sbs to an sbsar with the thumbnail in the destination node
-            env.cook_no_scan(output_sbsar, thumb_sbs)
-        else:
-            # Arnold not found, just copy the cooked sbsar to the output directory
-            env.cp(output_sbsar, cooked_dest)
+        # Cook the sbs to an sbsar with the thumbnail in the destination node
+        env.cook_no_scan(output_sbsar, thumb_sbs)
 
 
 # Walk through the source directory and process all sbs files
