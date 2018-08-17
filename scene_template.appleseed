@@ -2,6 +2,7 @@
 <project format_revision="25">
     <search_paths>
         <search_path>../appleseed/shaders</search_path>
+        <search_path>../appleseed-additional-shaders</search_path>
     </search_paths>
     <scene>
         <camera name="camera" model="pinhole_camera">
@@ -14,12 +15,11 @@
         <environment_edf name="environment_edf" model="hosek_environment_edf">
             <parameter name="ground_albedo" value="0.3" />
             <parameter name="horizon_shift" value="0.0" />
-            <parameter name="luminance_multiplier" value="1.0" />
-            <parameter name="saturation_multiplier" value="0.5" />
+            <parameter name="luminance_multiplier" value="0.5" />
+            <parameter name="saturation_multiplier" value="0.6" />
             <parameter name="sun_phi" value="45.0" />
             <parameter name="sun_theta" value="45.0" />
             <parameter name="turbidity" value="1.0" />
-            <parameter name="turbidity_multiplier" value="1.0" />
         </environment_edf>
         <environment_shader name="environment_shader" model="edf_environment_shader">
             <parameter name="environment_edf" value="environment_edf" />
@@ -53,7 +53,9 @@
                 <shader type="shader" name="appleseed/as_bump" layer="bump">
                     <parameter name="in_mode" value="string Normal Map" />
                 </shader>
-                <shader type="shader" name="appleseed/as_standard_surface" layer="surface">
+                <shader type="shader" name="as_sbs_pbrmaterial" layer="surface">
+                    <parameter name="in_specularLevel" value="float 0.0" />
+                    <parameter name="in_emissiveIntensity" value="float 0.0" />
                 </shader>
                 <shader type="surface" name="max/as_max_closure2surface" layer="closure2surface">
                 </shader>
@@ -62,10 +64,10 @@
                 <connect_shaders src_layer="uvs" src_param="out_outUV" dst_layer="metallic_texture" dst_param="in_texture_coords" />
                 <connect_shaders src_layer="uvs" src_param="out_outUV" dst_layer="normal_texture" dst_param="in_texture_coords" />
                 <connect_shaders src_layer="normal_texture" src_param="out_color" dst_layer="bump" dst_param="in_normal_map" />
-                <connect_shaders src_layer="basecolor_texture" src_param="out_color" dst_layer="surface" dst_param="in_color" />
-                <connect_shaders src_layer="roughness_texture" src_param="out_channel" dst_layer="surface" dst_param="in_specular_roughness" />
-                <connect_shaders src_layer="metallic_texture" src_param="out_color" dst_layer="surface" dst_param="in_specular_color" />
-                <connect_shaders src_layer="bump" src_param="out_normal" dst_layer="surface" dst_param="in_bump_normal_substrate" />
+                <connect_shaders src_layer="basecolor_texture" src_param="out_color" dst_layer="surface" dst_param="in_baseColor" />
+                <connect_shaders src_layer="roughness_texture" src_param="out_channel" dst_layer="surface" dst_param="in_roughness" />
+                <connect_shaders src_layer="metallic_texture" src_param="out_channel" dst_layer="surface" dst_param="in_metallic" />
+                <connect_shaders src_layer="bump" src_param="out_normal" dst_layer="surface" dst_param="in_normal" />
                 <connect_shaders src_layer="surface" src_param="out_outColor" dst_layer="closure2surface" dst_param="in_input" />
             </shader_group>
             <shader_group name="floor_shader_group">
@@ -85,7 +87,8 @@
             </material>
             <light name="light" model="sun_light">
                 <parameter name="environment_edf" value="environment_edf" />
-                <parameter name="turbidity" value="4.0" />
+                <parameter name="turbidity" value="2.0" />
+                <parameter name="radiance_multiplier" value="1.6" />
             </light>
             <object name="floor" model="mesh_object">
                 <parameter name="primitive" value="grid" />
