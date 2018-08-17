@@ -123,7 +123,7 @@ def render_thumbnail_appleseed(env, target, source):
 
 # Scons builder injecting a thumbnail into an sbs file
 def inject_thumbnail(env, target, source):
-    print('injecting thumbnail')
+    print('Injecting thumbnail into %s...' % str(target[0]))
     source_sbs = str(source[0])
     source_thumbnail = str(source[1])
     sbsDoc = substance.SBSDocument(sbs_context, source_sbs)
@@ -138,7 +138,7 @@ def inject_thumbnail(env, target, source):
                 r.mSource = None
 
     sbsDoc.writeDoc(aNewFileAbsPath=str(target[0]), aUpdateRelativePaths=True)
-    print('wrote doc %s' % str(target[0]))
+    print('Wrote %s.' % str(target[0]))
     return None
 
 
@@ -152,7 +152,7 @@ def _scan_recursive(filename):
     merged_dep = set()
     # Only scan sbs dependencies, assume everything else is self contained
     if ext.lower() == '.sbs':
-        print('Scanning %s' % str(filename))
+        print('Scanning %s...' % str(filename))
         sbsDoc = substance.SBSDocument(sbs_context, str(filename))
         sbsDoc.parseDoc()
         # Get resources and dependencies this file depends on
@@ -184,11 +184,14 @@ env = Environment(
     BUILDERS={
         # Copy builder
         'cp': Builder(action=Copy("$TARGET", "$SOURCE")),
+
         # Cooking with scanning
         'cook_scan': Builder(action=Action(cook_sbs),
                              source_scanner=sbs_scanner),
+
         # Cooking without rescanning
         'cook_no_scan': Builder(action=Action(cook_sbs)),
+
         # Rendering an sbsar to images
         'render': Builder(action=Action(render,
                                         varlist=['RESOLUTION', 'MAP'])),

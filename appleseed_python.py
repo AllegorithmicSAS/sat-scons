@@ -94,6 +94,8 @@ def install_appleseed():
             print("Removing {0}...".format(archive_filename))
             os.remove(archive_filename)
 
+    print("Proceeding...")
+
 
 def render(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex, resolution):
     try:
