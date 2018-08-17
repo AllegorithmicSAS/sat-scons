@@ -90,7 +90,7 @@ def render_arnold(target_file, base_color_tex, normal_tex, roughness_tex, metall
         uvidxs_array = AiArrayConvert(len(idxuv), 1, AI_TYPE_UINT, (c_uint * len(idxuv))(*idxuv))
         AiNodeSetArray(mesh, "uvidxs", uvidxs_array)
 
-        # Shader
+        # Sphere shader
         shader1 = AiNode("standard_surface")
         AiNodeSetStr(shader1, "name", "material_sample")
         _bind_texture(shader1, base_color_tex, 'base_color', 4.0)
@@ -98,12 +98,11 @@ def render_arnold(target_file, base_color_tex, normal_tex, roughness_tex, metall
         _bind_texture(shader1, metallic_tex, 'metalness', 4.0, 'linear')
         _bind_texture_normal(shader1, normal_tex, 'normal', 4.0, 'linear')
         AiNodeSetPtr(sph, "shader", shader1)
-        AiNodeSetPtr(mesh, "shader", shader1)
-        AiNodeSetPtr(sph, "shader", shader1)
 
+        # Ground shader
         shader2 = AiNode("standard_surface")
         AiNodeSetStr(shader2, "name", "ground")
-        AiNodeSetRGB(shader2, "base_color", .3, 0.3, 0.3)
+        AiNodeSetRGB(shader2, "base_color", 0.3, 0.3, 0.3)
         AiNodeSetFlt(shader2, "specular", 0.0)
         AiNodeSetPtr(mesh, "shader", shader2)
 
@@ -119,8 +118,8 @@ def render_arnold(target_file, base_color_tex, normal_tex, roughness_tex, metall
         sky_tex = AiNode("physical_sky")
         AiNodeSetStr(sky_tex, "name", "mylight")
         AiNodeSetBool(sky_tex, 'use_degrees', True)
-        AiNodeSetFlt(sky_tex, 'elevation', 45)
-        AiNodeSetFlt(sky_tex, 'azimuth', 45)
+        AiNodeSetFlt(sky_tex, 'elevation', 45.0)
+        AiNodeSetFlt(sky_tex, 'azimuth', 45.0)
 
         sky_light = AiNode('skydome_light')
         AiNodeSetFlt(sky_light, 'intensity', 3.0)
