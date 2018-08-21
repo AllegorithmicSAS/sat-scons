@@ -8,13 +8,16 @@ thumbnails for the materials and injecting them into the sbsar files automatical
 In order to run this sample you need:
 * Substance Automation Toolkit. Either pro or indie works
 * Python 2.7, 3.5 or 3.6.
-    * Scons 
-    * pathlib
-* Optionally Arnold for Maya [http://solidangle.com/arnold/download/] to enable thumbnail 
-rendering
+    * [Scons](https://scons.org/) 
+    * [pathlib](https://docs.python.org/3/library/pathlib.html)
 
-This sample has only been tested under Microsoft Windows but it should be possible to run 
-on Linux or macOS with no or few modifications.
+The sample will also need a renderer for thumbnails. It will download the 
+[appleseed](https://appleseedhq.net/)
+renderer and use it by default. It also supports using 
+[Arnold for Maya](http://solidangle.com/arnold/download/) for thumbnail 
+rendering.
+
+The sample should work on Windows, Linux and macOS.
 
 ### Install Python
 
@@ -70,8 +73,8 @@ for help [https://www.howtogeek.com/118594/how-to-edit-your-system-path-for-easy
 Don't forget to restart your command prompt window after you changed the path.
 
 If you prefer to not update your path you can also run SCons directly from the scripts directory.
-In the event you use Python 2.7 on Windows the command would look something like this assuming Python is installed in the directory
-```C:\Python27
+In the event you use Python 2.7 on Windows the command would look something like this assuming Python is installed in the directory C:\Python27
+```
 PS C:\work\Allegorithmic\code> C:\Python27\Scripts\scons.bat
 
 scons: *** No SConstruct file found.
@@ -189,12 +192,31 @@ environment. This environment is initialized with all builders and scanners and 
 environment object they will go into the database of operations. When done executing the SConscript file it will look
 at what has changed since last time and rebuild everything for you.
 
+## Thumbnail rendering using appleseed
+
+As part of this sample thumbnails are rendered using appleseed. The code doing the rendering is found in the file 
+appleseed_python.py. The sample comes with an OSL implementation of the PBR Metallic/Roughness shader used in 
+Designer/Painter.
+
+The setup is based on a pre-authored scene containing:
+* A sphere textured with PBR maps
+* A ground plane
+* A physical sky as a light source
+* A camera for rendering the image
+
+Process
+* Checks that appleseed has already been downloaded, then downloads it and unpacks it if not.
+* Reads the template scene and replaces the filenames for the textures with the ones for the current material
+* Writes out the updated appleseed scene file to the temp directory
+* Invokes the appleseed command line renderer on updated appleseed scene to render the image
+ 
+
 ## Thumbnail rendering using Arnold
 
-As part of this sample thumbnails are rendered using Arnold if it's available. If it's not detected the build will just
-skip this step. You can learn more about Arnold and its Python API here [https://www.solidangle.com/].
+By default the thumbnail rendering is done using appleseed. To force using Arnold, change the FORCE_ARNOLD variable
+in SConstruct to True. The Arnold rendering code uses its Python API here [https://www.solidangle.com/].
 The function in the sample essentially takes a set of PBR maps and sets up a scene with:
-* Sphere textured with the PBR maps
+* A Sphere textured with the PBR maps
 * A ground plane
 * A physical sky as a light source
 * A camera for rendering the image
