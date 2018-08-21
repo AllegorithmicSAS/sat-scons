@@ -5,6 +5,7 @@ from pysbs import substance
 from pysbs import batchtools
 import os.path
 import pathlib
+import shutil
 
 
 def detect_arnold_installation(arnold_roots, min_arnold_version):
@@ -77,6 +78,14 @@ def strip_directory_and_extension(file_path):
     return os.path.splitext(os.path.basename(file_path))[0]
 
 
+# Scons builder that copies a source file to a target only if source file exists.
+def copy_file_if_exists(target, source, env):
+    target_path = str(target[0])
+    source_path = str(source[0])
+    if os.path.isfile(source_path):
+        shutil.copyfile(source_path, target_path)
+
+
 # Scons cook builder
 def cook_sbs(env, target, source):
     dest_filename = str(target[0])
@@ -91,7 +100,7 @@ def cook_sbs(env, target, source):
 
 
 # Scons render builder
-def render(env, target, source):
+def render_map(env, target, source):
     dest_filename = str(target[0])
     source = str(source[0])
     map = env['MAP']
@@ -134,7 +143,10 @@ def inject_thumbnail(env, target, source):
     sbsDoc = substance.SBSDocument(sbs_context, source_sbs)
     sbsDoc.parseDoc()
     g = sbsDoc.getSBSGraphList()[0]
-    g.setIcon(source_thumbnail)
+    if os.path.isfile(source_thumbnail):
+        g.setIcon(source_thumbnail)
+    else:
+        print("Thumbnail not found, skipping setting the thumbnail.")
     resource_list = sbsDoc.getSBSResourceList()
     for r in resource_list:
         if r.mSource:
@@ -148,6 +160,7 @@ def inject_thumbnail(env, target, source):
 
 
 _dependencies = {}
+
 
 # Find all dependencies recursively storing results recursively to
 # _dependencies to avoid rescanning the same file multiple times when dealing with
@@ -172,6 +185,7 @@ def _scan_recursive(filename):
             merged_dep = merged_dep.union(_dependencies[dep])
     _dependencies[filename] = merged_dep
 
+
 # Scanner identifying dependencies from an sbs file
 def sbs_scan(node, env, path, arg=None):
     filename = str(node)
@@ -179,6 +193,7 @@ def sbs_scan(node, env, path, arg=None):
     if filename not in _dependencies:
         _scan_recursive(filename)
     return list(_dependencies[filename])
+
 
 # Set up the sbs_scanner
 sbs_scanner = Scanner(function=sbs_scan,
@@ -188,7 +203,7 @@ sbs_scanner = Scanner(function=sbs_scan,
 env = Environment(
     BUILDERS={
         # Copy builder
-        'cp': Builder(action=Copy("$TARGET", "$SOURCE")),
+        'cp': Builder(action=copy_file_if_exists),
 
         # Cooking with scanning
         'cook_scan': Builder(action=Action(cook_sbs),
@@ -198,8 +213,9 @@ env = Environment(
         'cook_no_scan': Builder(action=Action(cook_sbs)),
 
         # Rendering an sbsar to images
-        'render': Builder(action=Action(render,
-                                        varlist=['RESOLUTION', 'MAP'])),
+        'render_map': Builder(action=Action(render_map,
+                                            varlist=['RESOLUTION', 'MAP'])),
+
         # Render a thumbnail
         'render_thumbnail': Builder(action=Action(render_thumbnail_arnold if FORCE_ARNOLD else render_thumbnail_appleseed,
                                                   varlist=['RESOLUTION'])),
@@ -218,7 +234,7 @@ def render_maps(env, src_node, maps_to_render, resolution):
         local_path = list(split_path)
         local_path[-1] = os.path.splitext(local_path[-1])[0] + '_' + m + '.png'
         new_path = os.path.join(*local_path)
-        res[m] = env.render(new_path, src_node, MAP=m, RESOLUTION=resolution)[0]
+        res[m] = env.render_map(new_path, src_node, MAP=m, RESOLUTION=resolution)[0]
     return res
 
 
