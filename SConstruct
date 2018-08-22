@@ -46,6 +46,11 @@ THUMBNAIL_RESOLUTION = [256, 256]
 MAP_RESOLUTION = 10
 SRC_DIR = "data"
 
+
+#
+# Renderer detection/installation
+#
+
 if FORCE_ARNOLD:
     ARNOLD_ROOTS = ['C:/solidangle/mtoadeploy/2017',
                     'C:/solidangle/mtoadeploy/2018']
@@ -57,7 +62,14 @@ if FORCE_ARNOLD:
     if ARNOLD_FOUND:
         from arnold_python import render_arnold
 else:
-    from appleseed_python import render_appleseed
+    import appleseed_python
+
+    # Download and install appleseed if necessary.
+    if not os.path.isdir("appleseed"):
+        if appleseed_python.prompt_user_for_installation():
+            appleseed_python.install_appleseed()
+        else:
+            print("Not installing or using appleseed; no thumbnail will be rendered.")
 
 
 # Configure scons for faster dependency scanning (makes a difference on large libraries)
@@ -127,12 +139,12 @@ def render_thumbnail_arnold(env, target, source):
 
 # Scons thumbnail renderer using appleseed
 def render_thumbnail_appleseed(env, target, source):
-    return render_appleseed(target_file=str(target[0]),
-                            base_color_tex=os.path.basename(str(source[0])),
-                            normal_tex=os.path.basename(str(source[1])),
-                            roughness_tex=os.path.basename(str(source[2])),
-                            metallic_tex=os.path.basename(str(source[3])),
-                            resolution=env['RESOLUTION'])
+    return appleseed_python.render_appleseed(target_file=str(target[0]),
+                                             base_color_tex=os.path.basename(str(source[0])),
+                                             normal_tex=os.path.basename(str(source[1])),
+                                             roughness_tex=os.path.basename(str(source[2])),
+                                             metallic_tex=os.path.basename(str(source[3])),
+                                             resolution=env['RESOLUTION'])
 
 
 # Scons builder injecting a thumbnail into an sbs file

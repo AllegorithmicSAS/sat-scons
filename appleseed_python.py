@@ -4,6 +4,7 @@ import subprocess
 import sys
 import threading
 import urllib
+import zipfile
 
 if sys.version_info >= (3, 0):
     from urllib.parse import urlparse
@@ -14,30 +15,15 @@ else:
     from urllib import urlretrieve
     URLError = IOError
 
-import zipfile
-
 mutex = threading.Lock()
 
-user_accepted_appleseed_installation = None
 
 def render_appleseed(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex, resolution):
     mutex.acquire()
 
     try:
-        # Download and install appleseed if necessary.
-        if not os.path.isdir("appleseed"):
-            global user_accepted_appleseed_installation
-
-            if user_accepted_appleseed_installation is None:
-                user_accepted_appleseed_installation = prompt_user_for_installation()
-
-            if user_accepted_appleseed_installation:
-                install_appleseed()
-            else:
-                return
-
-        # Render with appleseed.
-        render(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex, resolution)
+        if os.path.isdir("appleseed"):
+            render(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex, resolution)
 
     finally:
         mutex.release()
@@ -62,7 +48,10 @@ def prompt_user_for_installation():
     print("===========================================================")
 
     while True:
-        choice = raw_input("Your choice: ").upper()
+        if sys.version_info >= (3, 0):
+            choice = input("Your choice: ").upper()
+        else:
+            choice = raw_input("Your choice: ").upper()
         if choice == "Y":
             return True
         if choice == "N":
