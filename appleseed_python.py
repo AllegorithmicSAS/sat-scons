@@ -5,17 +5,9 @@ import threading
 mutex = threading.Lock()
 
 
-def render_appleseed(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex, resolution):
+def render_appleseed(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex, resolution, appleseed_path):
     mutex.acquire()
 
-    try:
-        render(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex, resolution)
-
-    finally:
-        mutex.release()
-
-
-def render(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex, resolution):
     try:
         # Read the template file from disk.
         with open("scene_template.appleseed", "r") as file:
@@ -35,9 +27,12 @@ def render(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex,
             file.write(project_text)
 
         # Invoke appleseed to render the project file.
-        appleseed_cli_path = r"appleseed\bin\appleseed.cli.exe" if os.name == "nt" else "appleseed/bin/appleseed.cli"
+        appleseed_cli_path = os.path.join(appleseed_path, "bin", "appleseed.cli.exe" if os.name == "nt" else "appleseed.cli")
         subprocess.check_call([appleseed_cli_path, "--message-verbosity", "error", project_file, "--output", target_file])
 
     except Exception as e:
         print("Failed to generate {0} with appleseed: {1}".format(target_file, e))
         raise
+
+    finally:
+        mutex.release()

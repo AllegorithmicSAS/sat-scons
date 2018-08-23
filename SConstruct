@@ -8,28 +8,16 @@ import pathlib
 import shutil
 
 
-def detect_arnold_installation(arnold_roots, min_arnold_version):
-    for p in arnold_roots:
-        script_path = os.path.join(p, 'scripts')
-        bin_path = os.path.join(p, 'bin')
-        shader_path = os.path.join(p, 'shaders')
-        if os.path.isdir(script_path) and os.path.isdir(bin_path) and os.path.isdir(shader_path):
-            sys.path.insert(0, script_path)
-            os.environ['PATH'] = os.environ['PATH'] + ';' + bin_path
-            from arnold import AiGetVersion
-            major_arnold_version = int(AiGetVersion()[0])
-            if major_arnold_version < min_arnold_version:
-                print('Found Arnold version %d. This sample requires %d' % (major_arnold_version, min_arnold_version))
-                return (False, '')
-            return (True, shader_path)
-    print('No Arnold installation found. If this is unexpected, make sure the ARNOLD_ROOTS variable points '\
-          'to the right location.')
-    return (False, '')
-
-
 #
 # Configuration globals
 #
+
+# Where to look for Arnold
+ARNOLD_ROOTS = ['C:/solidangle/mtoadeploy/2017',
+                'C:/solidangle/mtoadeploy/2018']
+
+# Where to look for appleseed
+APPLESEED_ROOTS = ['appleseed']
 
 # Directories to ignore to avoid errors
 IGNORE_LIST = {'common_dependencies',
@@ -45,39 +33,69 @@ SRC_DIR = "data"
 
 
 #
-# Renderer detection/installation
+# Renderer detection
 #
 
-ARNOLD_ROOTS = ['C:/solidangle/mtoadeploy/2017',
-                'C:/solidangle/mtoadeploy/2018']
-MINIMUM_ARNOLD_VERSION = 5
+def detect_arnold_installation(arnold_roots, min_arnold_version):
+    for p in arnold_roots:
+        script_path = os.path.join(p, 'scripts')
+        bin_path = os.path.join(p, 'bin')
+        shader_path = os.path.join(p, 'shaders')
+        if os.path.isdir(script_path) and os.path.isdir(bin_path) and os.path.isdir(shader_path):
+            sys.path.insert(0, script_path)
+            os.environ['PATH'] += ';' + bin_path
+            from arnold import AiGetVersion
+            major_arnold_version = int(AiGetVersion()[0])
+            if major_arnold_version < min_arnold_version:
+                print('WARNING: Found Arnold version %d. This sample requires %d' % (major_arnold_version, min_arnold_version))
+                return (False, '')
+            return (True, shader_path)
+    return (False, '')
+
+def detect_appleseed_installation(appleseed_roots):
+    for p in appleseed_roots:
+        if os.path.isdir(p) and os.path.isdir(os.path.join(p, 'bin')):
+            return (True, p)
+    return (False, '')
+
+# Look for Arnold
 
 try:
+    MINIMUM_ARNOLD_VERSION = 5
     ARNOLD_FOUND, ARNOLD_SHADER_PATH = detect_arnold_installation(ARNOLD_ROOTS, MINIMUM_ARNOLD_VERSION)
 except:
     ARNOLD_FOUND = False
 
-print('Found Arnold: %r' % ARNOLD_FOUND)
-
 if ARNOLD_FOUND:
-    from arnold_python import render_arnold
-
-APPLESEED_FOUND = os.path.isdir("appleseed")
-print('Found appleseed: %r' % APPLESEED_FOUND)
-
-if APPLESEED_FOUND:
-    from appleseed_python import render_appleseed
-
-if ARNOLD_FOUND:
-    if APPLESEED_FOUND:
-        print('Found both Arnold and appleseed; using Arnold for thumbnail rendering.')
-    else:
-        print('Using Arnold for thumbnail rendering.')
+    print('Found Arnold in %s.' % os.path.dirname(ARNOLD_SHADER_PATH))
+    import arnold_python
 else:
+    print('WARNING: No Arnold installation found. If this is unexpected, ' \
+          'make sure the ARNOLD_ROOTS variable points to the right location.')
+
+# Look for appleseed
+
+if not ARNOLD_FOUND:
+    try:
+        APPLESEED_FOUND, APPLESEED_PATH = detect_appleseed_installation(APPLESEED_ROOTS)
+    except:
+        APPLESEED_FOUND = False
+
     if APPLESEED_FOUND:
-        print('Using appleseed for thumbnail rendering.')
+        print('Found appleseed in %s.' % APPLESEED_PATH)
+        import appleseed_python
     else:
-        print('Neither Arnold nor appleseed was found; skipping thumbnail rendering.')
+        print('WARNING: No appleseed installation found. If this is unexpected, ' \
+              'make sure the APPLESEED_ROOTS variable points to the right location.')
+
+# Report detection results
+
+if ARNOLD_FOUND:
+    print('Using Arnold for thumbnail rendering.')
+elif APPLESEED_FOUND:
+    print('Using appleseed for thumbnail rendering.')
+else:
+    print('WARNING: Neither Arnold nor appleseed were found; skipping thumbnail rendering.')
 
 
 # Configure scons for faster dependency scanning (makes a difference on large libraries)
@@ -137,21 +155,22 @@ def render_map(env, target, source):
 # Scons thumbnail rendering builder
 def render_thumbnail(env, target, source):
     if ARNOLD_FOUND:
-        return render_arnold(target_file=str(target[0]),
-                             base_color_tex=str(source[0]),
-                             normal_tex=str(source[1]),
-                             roughness_tex=str(source[2]),
-                             metallic_tex=str(source[3]),
-                             resolution=env['RESOLUTION'],
-                             shader_path=ARNOLD_SHADER_PATH)
+        return arnold_python.render_arnold(target_file=str(target[0]),
+                                           base_color_tex=str(source[0]),
+                                           normal_tex=str(source[1]),
+                                           roughness_tex=str(source[2]),
+                                           metallic_tex=str(source[3]),
+                                           resolution=env['RESOLUTION'],
+                                           shader_path=ARNOLD_SHADER_PATH)
 
     if APPLESEED_FOUND:
-        return render_appleseed(target_file=str(target[0]),
-                                base_color_tex=os.path.basename(str(source[0])),
-                                normal_tex=os.path.basename(str(source[1])),
-                                roughness_tex=os.path.basename(str(source[2])),
-                                metallic_tex=os.path.basename(str(source[3])),
-                                resolution=env['RESOLUTION'])
+        return appleseed_python.render_appleseed(target_file=str(target[0]),
+                                                 base_color_tex=os.path.basename(str(source[0])),
+                                                 normal_tex=os.path.basename(str(source[1])),
+                                                 roughness_tex=os.path.basename(str(source[2])),
+                                                 metallic_tex=os.path.basename(str(source[3])),
+                                                 resolution=env['RESOLUTION'],
+                                                 appleseed_path=APPLESEED_PATH)
 
 
 # Scons builder injecting a thumbnail into an sbs file
