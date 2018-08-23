@@ -354,3 +354,40 @@ should never be checked in to a source control system or live anywhere outside t
 
 Now you can try changing files in the data or dependencies directory and re-run the sample and see how the build system
 figures out what has changed since last time you ran it.
+
+## Known issues
+
+### Python 3 on Windows
+
+When running scons on Python 3 on Windows there seems to be a problem related to the module 
+[pywin32](https://pypi.org/project/pywin32/) and its interaction with scons. 
+If it's installed there will be an error looking like this:
+```
+inject_thumbnail(["temp\bark.sbs"], ["data\bark.sbs", "temp\bark.png"])
+Injecting thumbnail into temp\bark.sbs...
+[ERROR][pysbs.api_decorators] Exception of kind UnsupportedOperation in pysbs.sbswriter, line 35: SBSWriter.writeOnDisk()
+[ERROR][pysbs.api_decorators] Exception of kind UnsupportedOperation in pysbs.substance.substance, line 279: SBSDocument.writeDoc()
+scons: *** [temp\bark.sbs] TypeError : decoding to str: need a bytes-like object, NoneType found
+Traceback (most recent call last):
+  File "c:\python36\lib\site-packages\scons-3.0.1\SCons\Taskmaster.py", line 255, in execute
+    self.targets[0].build()
+  File "c:\python36\lib\site-packages\scons-3.0.1\SCons\Node\__init__.py", line 750, in build
+    self.get_executor()(self, **kw)
+  File "c:\python36\lib\site-packages\scons-3.0.1\SCons\Executor.py", line 396, in __call__
+    return _do_execute_map[self._do_execute](self, target, kw)
+  File "c:\python36\lib\site-packages\scons-3.0.1\SCons\Executor.py", line 127, in execute_action_list
+    status = act(*args, **kw)
+  File "c:\python36\lib\site-packages\scons-3.0.1\SCons\Action.py", line 709, in __call__
+    stat = self.execute(target, source, env, executor=executor)
+  File "c:\python36\lib\site-packages\scons-3.0.1\SCons\Action.py", line 1207, in execute
+    result = SCons.Errors.convert_to_BuildError(result, exc_info)
+  File "c:\python36\lib\site-packages\scons-3.0.1\SCons\Errors.py", line 203, in convert_to_BuildError
+    exc_info=exc_info)
+  File "c:\python36\lib\site-packages\scons-3.0.1\SCons\Errors.py", line 98, in __init__
+    self.errstr = SCons.Util.to_str(errstr)
+  File "c:\python36\lib\site-packages\scons-3.0.1\SCons\Util.py", line 1620, in to_str
+    return str (s, 'utf-8')
+TypeError: decoding to str: need a bytes-like object, NoneType found
+scons: building terminated because of errors.
+```
+The current workaround would be to uninstall the pywin32 module until we come up with a long term solution.
