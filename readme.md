@@ -11,11 +11,12 @@ In order to run this sample you need:
     * [Scons](https://scons.org/) 
     * [pathlib](https://docs.python.org/3/library/pathlib.html)
 
-The sample will also need a renderer for thumbnails. It will download the 
-[appleseed](https://appleseedhq.net/)
-renderer and use it by default. It also supports using 
-[Arnold for Maya](http://solidangle.com/arnold/download/) for thumbnail 
-rendering.
+The sample uses a renderer for thumbnails. It supports two renderers.
+* [Arnold for Maya](http://solidangle.com/arnold/download/)
+* [appleseed](https://appleseedhq.net/)
+
+It will look for Arnold first, then appleseed and run without rendering thumbnails in case it can't find either of
+them. 
 
 The sample should work on Windows, Linux and macOS.
 
@@ -57,7 +58,24 @@ command prompt
 For more help on getting pip setup look here:
 [https://pip.pypa.io/en/stable/installing/]
 
-When done installing the dependencies, the last thing you need to know is how to run SCons.
+### Install appleseed
+
+Appleseed is an open source renderer available under the MIT license. If available it will be used for rendering
+thumbnails. The installation steps for this sample are:
+* Download appleseed from its [download page](https://appleseedhq.net/download.html). 
+* Unpack it in the sample directory. The appleseed directory in the zip should be in put in sample root 
+directory.
+* If you want to change the locations to look for appleseed, update the APPLESEED_ROOTS variable in SConstruct script.
+
+### Install Arnold
+
+The sample can use Arnold as a renderer. It will search paths in ARNOLD_ROOTS for a valid
+installation. It's set up to look for installations in the default locations for windows. 
+Arnold can be found on its [download page](http://solidangle.com/arnold/download/).
+
+### Verifying the setup
+
+When done installing the dependencies, the final thing you need to know is how to run SCons.
 If your Python environment is set up so scripts directory is in your path you can run SCons directly
 from the console like this:
 ```
@@ -105,8 +123,9 @@ When you get hold of the sample directory looks something like:
             substance_logo.png
 ```
 * The data directory contains 3 different Substance materials. The dependencies contains
-various subgraphs and images used by the materials. 
+various substance files and images used by the materials. 
 * arnold_python.py contains code for rendering a thumbnail using Arnold's Python API
+* appleseed_python.py contains code for rendering a thumbnail using the appleseed command line renderer
 * SConstruct is a Python file containing the build process for cooking and rendering 
 described below
 
@@ -135,8 +154,8 @@ its last rendering time. The problem now are the files in the dependency directo
 material that uses that dependency is going to have to be re-rendered and suddenly we need to deal with a more complex
 challenge. Fortunately there are off-the-shelf solutions for this called build systems. These are typically used for 
 making incremental builds of programming projects but it works great for other similar problems too. In this example we 
-are using SCons which is a Python-based build system. The other benefit with using a build system is that it can help you
-multithread your builds. Since the build system knows all the dependencies between the different files and tasks
+are using SCons which is a Python-based build system. The other benefit with using a build system is that it can help 
+you multithread your builds. Since the build system knows all the dependencies between the different files and tasks
 it can also see which ones of them need to be run in a specific order allowing it to run independent tasks
 in parallel.
 
@@ -147,7 +166,7 @@ can incrementally update the the sbsars and thumbnails as we make changes to the
 library.
 
 A full walk-through of SCons is out of the scope in this sample but for in-depth 
-information go here [https://scons.org/]. Here we'll just cover some basic concepts.
+information go [here](https://scons.org/). Here we'll just cover some basic concepts.
 
 ### SConstruct
 
@@ -205,7 +224,6 @@ The setup is based on a pre-authored scene containing:
 * A camera for rendering the image
 
 Process
-* Checks that appleseed has already been downloaded, then downloads it and unpacks it if not.
 * Reads the template scene and replaces the filenames for the textures with the ones for the current material
 * Writes out the updated appleseed scene file to the temp directory
 * Invokes the appleseed command line renderer on updated appleseed scene to render the image
