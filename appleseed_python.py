@@ -1,19 +1,6 @@
 import os
-import platform
 import subprocess
-import sys
 import threading
-import urllib
-import zipfile
-
-if sys.version_info >= (3, 0):
-    from urllib.parse import urlparse
-    from urllib.request import urlretrieve
-    from urllib.error import URLError
-else:
-    from urlparse import urlparse
-    from urllib import urlretrieve
-    URLError = IOError
 
 mutex = threading.Lock()
 
@@ -22,103 +9,10 @@ def render_appleseed(target_file, base_color_tex, normal_tex, roughness_tex, met
     mutex.acquire()
 
     try:
-        if os.path.isdir("appleseed"):
-            render(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex, resolution)
+        render(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex, resolution)
 
     finally:
         mutex.release()
-
-
-def prompt_user_for_installation():
-    print("===========================================================")
-    print("This script is about to download and use appleseed.        ")
-    print("                                                           ")
-    print("appleseed is an open source rendering engine available     ")
-    print("under the MIT license.                                     ")
-    print("                                                           ")
-    print("If you accept installation, appleseed 1.9.0-beta           ")
-    print("(between 54 and 86 MB) will be downloaded from GitHub,     ")
-    print("unpacked in the current directory and used for rendering   ")
-    print("thumbnails.                                                ")
-    print("                                                           ")
-    print("If you refuse installation, no thumbnail will be rendered. ")
-    print("                                                           ")
-    print("- Press Y followed by Enter to accept                      ")
-    print("- Press N followed by Enter to refuse                      ")
-    print("===========================================================")
-
-    while True:
-        if sys.version_info >= (3, 0):
-            choice = input("Your choice: ").upper()
-        else:
-            choice = raw_input("Your choice: ").upper()
-        if choice == "Y":
-            return True
-        if choice == "N":
-            return False
-
-
-def install_appleseed():
-    archive_filename = None
-
-    try:
-        # Official appleseed releases can be found at https://github.com/appleseedhq/appleseed/releases.
-        download_urls = {
-            "win32":  "https://github.com/appleseedhq/appleseed/releases/download/1.9.0-beta/appleseed-1.9.0-beta-0-g5693918-win64-vs140.zip",
-            "linux":  "https://github.com/appleseedhq/appleseed/releases/download/1.9.0-beta/appleseed-1.9.0-beta-0-g5693918-linux64-gcc48.zip",
-            "darwin": "https://github.com/appleseedhq/appleseed/releases/download/1.9.0-beta/appleseed-1.9.0-beta-0-g5693918-mac64-clang.zip"
-        }
-
-        # Prior to Python 3.3, sys.platform returns "linux2" or "linux3":
-        # https://docs.python.org/3/library/sys.html#sys.platform
-        platform_name = sys.platform
-        if platform_name.startswith("linux"):
-            platform_name = "linux"
-
-        # Abort if appleseed is not supported on the current platform.
-        if platform_name not in download_urls:
-            raise RuntimeError("appleseed is not supported on {0}.".format(platform_name))
-
-        download_url = download_urls[platform_name]
-        archive_filename = os.path.basename(urlparse(download_url).path)
-
-        # Download appleseed.
-        print("Downloading {0}...".format(download_url))
-        urlretrieve(download_url, archive_filename)
-
-        # Unpack archive.
-        print("Unpacking {0}...".format(archive_filename))
-        zip = zipfile.ZipFile(archive_filename, "r")
-        zip.extractall(".")
-        zip.close()
-
-        # On Linux/macOS, make sure appleseed.cli is executable.
-        if os.name == "posix":
-            os.chmod("appleseed/bin/appleseed.cli", 755)
-
-        # Conclude.
-        if os.path.isdir("appleseed"):
-            print("Successfully installed appleseed in {0}.".format(os.path.abspath("appleseed")))
-        else:
-            raise RuntimeError("Failed to install appleseed")
-
-    # This handler exists to work around a limitation/bug in SCons.
-    except URLError as e:
-        e.strerror = "Failed to install appleseed: {0}".format(e)
-        print(e.strerror)
-        raise
-
-    except Exception as e:
-        print("Failed to install appleseed: {0}".format(e))
-        raise
-
-    finally:
-        if archive_filename and os.path.isfile(archive_filename):
-            # Delete archive.
-            print("Removing {0}...".format(archive_filename))
-            os.remove(archive_filename)
-
-    print("Proceeding...")
 
 
 def render(target_file, base_color_tex, normal_tex, roughness_tex, metallic_tex, resolution):

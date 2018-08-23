@@ -31,9 +31,6 @@ def detect_arnold_installation(arnold_roots, min_arnold_version):
 # Configuration globals
 #
 
-# If true, use Arnold for rendering, otherwise use appleseed.
-FORCE_ARNOLD = False
-
 # Directories to ignore to avoid errors
 IGNORE_LIST = {'common_dependencies',
                'dependencies',
@@ -51,25 +48,36 @@ SRC_DIR = "data"
 # Renderer detection/installation
 #
 
-if FORCE_ARNOLD:
-    ARNOLD_ROOTS = ['C:/solidangle/mtoadeploy/2017',
-                    'C:/solidangle/mtoadeploy/2018']
-    MINIMUM_ARNOLD_VERSION = 5
+ARNOLD_ROOTS = ['C:/solidangle/mtoadeploy/2017',
+                'C:/solidangle/mtoadeploy/2018']
+MINIMUM_ARNOLD_VERSION = 5
 
+try:
     ARNOLD_FOUND, ARNOLD_SHADER_PATH = detect_arnold_installation(ARNOLD_ROOTS, MINIMUM_ARNOLD_VERSION)
-    print('Found Arnold: %r' % ARNOLD_FOUND)
+except:
+    ARNOLD_FOUND = False
 
-    if ARNOLD_FOUND:
-        from arnold_python import render_arnold
+print('Found Arnold: %r' % ARNOLD_FOUND)
+
+if ARNOLD_FOUND:
+    from arnold_python import render_arnold
+
+APPLESEED_FOUND = os.path.isdir("appleseed")
+print('Found appleseed: %r' % APPLESEED_FOUND)
+
+if APPLESEED_FOUND:
+    from appleseed_python import render_appleseed
+
+if ARNOLD_FOUND:
+    if APPLESEED_FOUND:
+        print('Found both Arnold and appleseed; using Arnold for thumbnail rendering.')
+    else:
+        print('Using Arnold for thumbnail rendering.')
 else:
-    import appleseed_python
-
-    # Download and install appleseed if necessary.
-    if not os.path.isdir("appleseed"):
-        if appleseed_python.prompt_user_for_installation():
-            appleseed_python.install_appleseed()
-        else:
-            print("Not installing or using appleseed; no thumbnail will be rendered.")
+    if APPLESEED_FOUND:
+        print('Using appleseed for thumbnail rendering.')
+    else:
+        print('Neither Arnold nor appleseed was found; skipping thumbnail rendering.')
 
 
 # Configure scons for faster dependency scanning (makes a difference on large libraries)
@@ -111,7 +119,7 @@ def cook_sbs(env, target, source):
     return cook_res
 
 
-# Scons render builder
+# Scons map rendering builder
 def render_map(env, target, source):
     dest_filename = str(target[0])
     source = str(source[0])
@@ -126,25 +134,24 @@ def render_map(env, target, source):
     return render_res
 
 
-# Scons thumbnail renderer using Arnold
-def render_thumbnail_arnold(env, target, source):
-    return render_arnold(target_file=str(target[0]),
-                         base_color_tex=str(source[0]),
-                         normal_tex=str(source[1]),
-                         roughness_tex=str(source[2]),
-                         metallic_tex=str(source[3]),
-                         resolution=env['RESOLUTION'],
-                         shader_path=ARNOLD_SHADER_PATH)
+# Scons thumbnail rendering builder
+def render_thumbnail(env, target, source):
+    if ARNOLD_FOUND:
+        return render_arnold(target_file=str(target[0]),
+                             base_color_tex=str(source[0]),
+                             normal_tex=str(source[1]),
+                             roughness_tex=str(source[2]),
+                             metallic_tex=str(source[3]),
+                             resolution=env['RESOLUTION'],
+                             shader_path=ARNOLD_SHADER_PATH)
 
-
-# Scons thumbnail renderer using appleseed
-def render_thumbnail_appleseed(env, target, source):
-    return appleseed_python.render_appleseed(target_file=str(target[0]),
-                                             base_color_tex=os.path.basename(str(source[0])),
-                                             normal_tex=os.path.basename(str(source[1])),
-                                             roughness_tex=os.path.basename(str(source[2])),
-                                             metallic_tex=os.path.basename(str(source[3])),
-                                             resolution=env['RESOLUTION'])
+    if APPLESEED_FOUND:
+        return render_appleseed(target_file=str(target[0]),
+                                base_color_tex=os.path.basename(str(source[0])),
+                                normal_tex=os.path.basename(str(source[1])),
+                                roughness_tex=os.path.basename(str(source[2])),
+                                metallic_tex=os.path.basename(str(source[3])),
+                                resolution=env['RESOLUTION'])
 
 
 # Scons builder injecting a thumbnail into an sbs file
@@ -218,19 +225,16 @@ env = Environment(
         'cp': Builder(action=copy_file_if_exists),
 
         # Cooking with scanning
-        'cook_scan': Builder(action=Action(cook_sbs),
-                             source_scanner=sbs_scanner),
+        'cook_scan': Builder(action=Action(cook_sbs), source_scanner=sbs_scanner),
 
         # Cooking without rescanning
         'cook_no_scan': Builder(action=Action(cook_sbs)),
 
         # Rendering an sbsar to images
-        'render_map': Builder(action=Action(render_map,
-                                            varlist=['RESOLUTION', 'MAP'])),
+        'render_map': Builder(action=Action(render_map, varlist=['RESOLUTION', 'MAP'])),
 
         # Render a thumbnail
-        'render_thumbnail': Builder(action=Action(render_thumbnail_arnold if FORCE_ARNOLD else render_thumbnail_appleseed,
-                                                  varlist=['RESOLUTION'])),
+        'render_thumbnail': Builder(action=Action(render_thumbnail, varlist=['RESOLUTION'])),
 
         # Injecting a thumbnail into an sbs file
         'inject_thumbnail': Builder(action=Action(inject_thumbnail))
