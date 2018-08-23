@@ -22,8 +22,8 @@ def detect_arnold_installation(arnold_roots, min_arnold_version):
                 print('Found Arnold version %d. This sample requires %d' % (major_arnold_version, min_arnold_version))
                 return (False, '')
             return (True, shader_path)
-    print('No Arnold installation found. If this is unexpected, make sure the arnold_roots variable points'\
-          'to the right location')
+    print('No Arnold installation found. If this is unexpected, make sure the ARNOLD_ROOTS variable points '\
+          'to the right location.')
     return (False, '')
 
 
