@@ -213,7 +213,8 @@ at what has changed since last time and rebuild everything for you.
 
 ## Thumbnail rendering using appleseed
 
-As part of this sample, thumbnails are rendered using appleseed. The code doing the rendering is found in the file 
+As part of this sample, thumbnails can be rendered using appleseed. Note that the default choice is Arnold but if it's 
+not found it will look for appleseed and use it if found. The code doing the rendering is found in the file 
 `appleseed_python.py`. The sample comes with an OSL implementation of the PBR Metallic/Roughness shader used in 
 Designer/Painter.
 
@@ -231,15 +232,15 @@ Process:
 
 ## Thumbnail rendering using Arnold
 
-By default the thumbnail rendering is done using appleseed. To force using Arnold, change the `FORCE_ARNOLD` variable
-in `SConstruct` to True. The Arnold rendering code uses its Python API here [https://www.solidangle.com/].
+By default the thumbnail rendering is done using Arnold.
+
 The function in the sample essentially takes a set of PBR maps and sets up a scene with:
 * A Sphere textured with the PBR maps
 * A ground plane
 * A physical sky as a light source
 * A camera for rendering the image
 
-A thing to note here is that there is a lock around the Arnold code meaning there will only be one thumbnail
+Note that there is a lock around the Arnold code meaning there will only be one thumbnail
 being rendered at once. This is done for two reasons:
 * The Arnold code is not written in a way where we can have two Arnold instances running at the same time meaning there 
 will be issues in case we do parallel builds
