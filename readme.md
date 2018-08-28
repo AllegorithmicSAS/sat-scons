@@ -58,6 +58,12 @@ command prompt
 For more help on getting pip setup look here:
 [https://pip.pypa.io/en/stable/installing/]
 
+### Install Arnold
+
+The sample can use Arnold as a renderer. It will search paths in `ARNOLD_ROOTS` for a valid
+installation. It's set up to look for installations in the default locations for windows. 
+Arnold can be found on its [download page](http://solidangle.com/arnold/download/).
+
 ### Install appleseed
 
 Appleseed is an open source renderer available under the MIT license. If available it will be used for rendering
@@ -66,12 +72,6 @@ thumbnails. The installation steps for this sample are:
 * Unpack it in the sample directory. The `appleseed` directory in the zip should be in put in the sample's root 
 directory.
 * If you want to change the locations to look for appleseed, update the `APPLESEED_ROOTS` variable in SConstruct script.
-
-### Install Arnold
-
-The sample can use Arnold as a renderer. It will search paths in `ARNOLD_ROOTS` for a valid
-installation. It's set up to look for installations in the default locations for windows. 
-Arnold can be found on its [download page](http://solidangle.com/arnold/download/).
 
 ### Verifying the setup
 
@@ -211,6 +211,23 @@ environment. This environment is initialized with all builders and scanners and 
 environment object they will go into the database of operations. When done executing the SConscript file it will look
 at what has changed since last time and rebuild everything for you.
 
+## Thumbnail rendering using Arnold
+
+By default the thumbnail rendering is done using Arnold.
+
+The function in the sample essentially takes a set of PBR maps and sets up a scene with:
+* A Sphere textured with the PBR maps
+* A ground plane
+* A physical sky as a light source
+* A camera for rendering the image
+
+Note that there is a lock around the Arnold code meaning there will only be one thumbnail
+being rendered at once. This is done for two reasons:
+* The Arnold code is not written in a way where we can have two Arnold instances running at the same time meaning there 
+will be issues in case we do parallel builds
+* Arnold is already multithreaded meaning most of the CPU power in the machine will be used by Arnold when rendering 
+anyway.
+
 ## Thumbnail rendering using appleseed
 
 As part of this sample, thumbnails can be rendered using appleseed. Note that the default choice is Arnold but if it's 
@@ -229,24 +246,6 @@ Process:
 * Writes out the updated appleseed scene file to the temp directory
 * Invokes the appleseed command line renderer on updated appleseed scene to render the image
  
-
-## Thumbnail rendering using Arnold
-
-By default the thumbnail rendering is done using Arnold.
-
-The function in the sample essentially takes a set of PBR maps and sets up a scene with:
-* A Sphere textured with the PBR maps
-* A ground plane
-* A physical sky as a light source
-* A camera for rendering the image
-
-Note that there is a lock around the Arnold code meaning there will only be one thumbnail
-being rendered at once. This is done for two reasons:
-* The Arnold code is not written in a way where we can have two Arnold instances running at the same time meaning there 
-will be issues in case we do parallel builds
-* Arnold is already multithreaded meaning most of the CPU power in the machine will be used by Arnold when rendering 
-anyway.
-
 ## Running the sample
 
 With all this background information and all the prerequisites installed we are finally ready to run the sample.
