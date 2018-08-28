@@ -11,7 +11,7 @@ In order to run this sample you need:
     * [Scons](https://scons.org/) 
     * [pathlib](https://docs.python.org/3/library/pathlib.html)
 
-The sample uses a renderer for thumbnails. It supports two renderers.
+The sample uses a renderer for thumbnails. It supports two renderers:
 * [Arnold for Maya](http://solidangle.com/arnold/download/)
 * [appleseed](https://appleseedhq.net/)
 
@@ -63,13 +63,13 @@ For more help on getting pip setup look here:
 Appleseed is an open source renderer available under the MIT license. If available it will be used for rendering
 thumbnails. The installation steps for this sample are:
 * Download appleseed from its [download page](https://appleseedhq.net/download.html). 
-* Unpack it in the sample directory. The appleseed directory in the zip should be in put in sample root 
+* Unpack it in the sample directory. The `appleseed` directory in the zip should be in put in the sample's root 
 directory.
-* If you want to change the locations to look for appleseed, update the APPLESEED_ROOTS variable in SConstruct script.
+* If you want to change the locations to look for appleseed, update the `APPLESEED_ROOTS` variable in SConstruct script.
 
 ### Install Arnold
 
-The sample can use Arnold as a renderer. It will search paths in ARNOLD_ROOTS for a valid
+The sample can use Arnold as a renderer. It will search paths in `ARNOLD_ROOTS` for a valid
 installation. It's set up to look for installations in the default locations for windows. 
 Arnold can be found on its [download page](http://solidangle.com/arnold/download/).
 
@@ -86,12 +86,12 @@ File "c:\python27\lib\site-packages\scons-3.0.1\SCons\Script\Main.py", line 924,
 ```
 
 If the scripts directory is not in path you can either add it to the path. Look here
-for help [https://www.howtogeek.com/118594/how-to-edit-your-system-path-for-easy-command-line-access/]
+for help: https://www.howtogeek.com/118594/how-to-edit-your-system-path-for-easy-command-line-access/
 
 Don't forget to restart your command prompt window after you changed the path.
 
 If you prefer to not update your path you can also run SCons directly from the scripts directory.
-In the event you use Python 2.7 on Windows the command would look something like this assuming Python is installed in the directory C:\Python27
+In the event you use Python 2.7 on Windows the command would look something like this assuming Python is installed in the directory `C:\Python27`:
 ```
 PS C:\work\Allegorithmic\code> C:\Python27\Scripts\scons.bat
 
@@ -124,12 +124,12 @@ When you get hold of the sample directory looks something like:
 ```
 * The data directory contains 3 different Substance materials. The dependencies contains
 various substance files and images used by the materials. 
-* arnold_python.py contains code for rendering a thumbnail using Arnold's Python API
-* appleseed_python.py contains code for rendering a thumbnail using the appleseed command line renderer
-* SConstruct is a Python file containing the build process for cooking and rendering 
-described below
+* `arnold_python.py` contains code for rendering a thumbnail using Arnold's Python API.
+* `appleseed_python.py` contains code for rendering a thumbnail using the appleseed command line renderer.
+* `SConstruct` is a Python file containing the build process for cooking and rendering 
+described below.
 
-The Python code is not described in detail in this document, refer to the comments in the code for help understanding it
+The Python code is not described in detail in this document, refer to the comments in the code for help understanding it.
 
 ## Process
 
@@ -170,8 +170,8 @@ information go [here](https://scons.org/). Here we'll just cover some basic conc
 
 ### SConstruct
 
-The file called SConstruct in the sample directory is a Python file which is used by
-SCons as a recipe for how a build should be done. Writing a SConstruct file requires
+The file called `SConstruct` in the sample directory is a Python file which is used by
+SCons as a recipe for how a build should be done. Writing a `SConstruct` file requires
 a little bit different thinking than ordinary Python since you are actually not
 executing your operations but just telling SCons what needs to be done and then it will
 figure out what has changed since last time and run the operations to make sure everything
@@ -213,8 +213,8 @@ at what has changed since last time and rebuild everything for you.
 
 ## Thumbnail rendering using appleseed
 
-As part of this sample thumbnails are rendered using appleseed. The code doing the rendering is found in the file 
-appleseed_python.py. The sample comes with an OSL implementation of the PBR Metallic/Roughness shader used in 
+As part of this sample, thumbnails are rendered using appleseed. The code doing the rendering is found in the file 
+`appleseed_python.py`. The sample comes with an OSL implementation of the PBR Metallic/Roughness shader used in 
 Designer/Painter.
 
 The setup is based on a pre-authored scene containing:
@@ -223,7 +223,7 @@ The setup is based on a pre-authored scene containing:
 * A physical sky as a light source
 * A camera for rendering the image
 
-Process
+Process:
 * Reads the template scene and replaces the filenames for the textures with the ones for the current material
 * Writes out the updated appleseed scene file to the temp directory
 * Invokes the appleseed command line renderer on updated appleseed scene to render the image
@@ -231,8 +231,8 @@ Process
 
 ## Thumbnail rendering using Arnold
 
-By default the thumbnail rendering is done using appleseed. To force using Arnold, change the FORCE_ARNOLD variable
-in SConstruct to True. The Arnold rendering code uses its Python API here [https://www.solidangle.com/].
+By default the thumbnail rendering is done using appleseed. To force using Arnold, change the `FORCE_ARNOLD` variable
+in `SConstruct` to True. The Arnold rendering code uses its Python API here [https://www.solidangle.com/].
 The function in the sample essentially takes a set of PBR maps and sets up a scene with:
 * A Sphere textured with the PBR maps
 * A ground plane
@@ -346,9 +346,9 @@ After a full run the directory will look like this:
         wood_planks_age_02_roughness.png
 ```
 As you can see there are now two new directories:
-* output which contains an sbsar directory for cooked versions of the materials in your library. In case Arnold is found
+* `output` which contains an sbsar directory for cooked versions of the materials in your library. In case Arnold is found
 there will also be a thumbnails directory which contains the thumbnail images for the materials.
-* temp which contains intermediate files created during the processing. This directory is completely derived from the 
+* `temp` which contains intermediate files created during the processing. This directory is completely derived from the 
 input files and can be deleted at any time but you should keep it around to avoid unnecessary rebuilds. It
 should never be checked in to a source control system or live anywhere outside the build machine.
 
@@ -360,7 +360,7 @@ figures out what has changed since last time you ran it.
 ### Python 3 on Windows
 
 When running scons on Python 3 on Windows there seems to be a problem related to the module 
-[pywin32](https://pypi.org/project/pywin32/) and its interaction with scons. 
+[pywin32](https://pypi.org/project/pywin32/) and its interaction with SCons. 
 If it's installed there will be an error looking like this:
 ```
 inject_thumbnail(["temp\bark.sbs"], ["data\bark.sbs", "temp\bark.png"])
