@@ -6,7 +6,8 @@ from pysbs import batchtools
 import os.path
 import pathlib
 import shutil
-
+import platform
+import math
 
 #
 # Configuration globals
@@ -18,6 +19,7 @@ ARNOLD_ROOTS = ['C:/solidangle/mtoadeploy/2017',
 
 # Where to look for appleseed
 APPLESEED_ROOTS = ['appleseed']
+
 
 # Directories to ignore to avoid errors
 IGNORE_LIST = {'common_dependencies',
@@ -31,7 +33,7 @@ THUMBNAIL_RESOLUTION = [256, 256]
 MAP_RESOLUTION = 10
 SRC_DIR = "data"
 
-
+GPU_ENGINE = 'ogl3'
 #
 # Renderer detection
 #
@@ -47,16 +49,19 @@ def detect_arnold_installation(arnold_roots, min_arnold_version):
             from arnold import AiGetVersion
             major_arnold_version = int(AiGetVersion()[0])
             if major_arnold_version < min_arnold_version:
-                print('WARNING: Found Arnold version %d. This sample requires %d' % (major_arnold_version, min_arnold_version))
+                print('WARNING: Found Arnold version %d. This sample requires %d' % (
+                major_arnold_version, min_arnold_version))
                 return (False, '')
             return (True, shader_path)
     return (False, '')
+
 
 def detect_appleseed_installation(appleseed_roots):
     for p in appleseed_roots:
         if os.path.isdir(p) and os.path.isdir(os.path.join(p, 'bin')):
             return (True, p)
     return (False, '')
+
 
 # Look for Arnold
 
@@ -70,7 +75,7 @@ if ARNOLD_FOUND:
     print('Found Arnold in %s.' % os.path.dirname(ARNOLD_SHADER_PATH))
     import arnold_python
 else:
-    print('WARNING: No Arnold installation found. If this is unexpected, ' \
+    print('WARNING: No Arnold installation found. If this is unexpected, '
           'make sure the ARNOLD_ROOTS variable points to the right location.')
 
 # Look for appleseed
@@ -85,7 +90,7 @@ if not ARNOLD_FOUND:
         print('Found appleseed in %s.' % APPLESEED_PATH)
         import appleseed_python
     else:
-        print('WARNING: No appleseed installation found. If this is unexpected, ' \
+        print('WARNING: No appleseed installation found. If this is unexpected, '
               'make sure the APPLESEED_ROOTS variable points to the right location.')
 
 # Report detection results
@@ -95,8 +100,7 @@ if ARNOLD_FOUND:
 elif APPLESEED_FOUND:
     print('Using appleseed for thumbnail rendering.')
 else:
-    print('WARNING: Neither Arnold nor appleseed were found; skipping thumbnail rendering.')
-
+    print('WARNING: Neither Arnold nor appleseed were found; PBR Node Designer will be use.')
 
 # Configure scons for faster dependency scanning (makes a difference on large libraries)
 
@@ -148,7 +152,8 @@ def render_map(env, target, source):
                                              output_name=strip_directory_and_extension(dest_filename),
                                              input_graph_output=map,
                                              set_value=['$outputsize@%d,%d' % (resolution, resolution)],
-                                             png_format_compression='none').wait()
+                                             png_format_compression='none',
+                                             engine=GPU_ENGINE).wait()
     return render_res
 
 
@@ -163,7 +168,7 @@ def render_thumbnail(env, target, source):
                                            resolution=env['RESOLUTION'],
                                            shader_path=ARNOLD_SHADER_PATH)
 
-    if APPLESEED_FOUND:
+    elif APPLESEED_FOUND:
         return appleseed_python.render_appleseed(target_file=str(target[0]),
                                                  base_color_tex=os.path.basename(str(source[0])),
                                                  normal_tex=os.path.basename(str(source[1])),
@@ -171,6 +176,20 @@ def render_thumbnail(env, target, source):
                                                  metallic_tex=os.path.basename(str(source[3])),
                                                  resolution=env['RESOLUTION'],
                                                  appleseed_path=APPLESEED_PATH)
+
+    else:
+        process = batchtools.sbsrender_render(
+            os.path.abspath("./data/dependencies/pbr_render.sbsar"),
+            output_name=os.path.splitext(os.path.basename(str(target[0])))[0],
+            output_path=os.path.dirname(str(target[0])),
+            engine=GPU_ENGINE,
+            set_entry=["basecolor@{}".format(str(source[0])),
+                       "metallic@{}".format(str(source[3])),
+                       "normal@{}".format(str(source[1])),
+                       "roughness@{}".format(str(source[2]))],
+            set_value=["$outputsize@{rx},{ry}".format(rx= int(math.log(int(env['RESOLUTION'][0]), 2)),
+                                                      ry=int(math.log(int(env['RESOLUTION'][0]), 2)))])
+        process.wait()
 
 
 # Scons builder injecting a thumbnail into an sbs file
