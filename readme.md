@@ -11,12 +11,12 @@ In order to run this sample you need:
     * [Scons](https://scons.org/) 
     * [pathlib](https://docs.python.org/3/library/pathlib.html)
 
-The sample uses a renderer for thumbnails. It supports two renderers:
+The sample uses a renderer for thumbnails. It supports two external renderers:
 * [Arnold for Maya](http://solidangle.com/arnold/download/)
 * [appleseed](https://appleseedhq.net/)
 
-It will look for Arnold first, then appleseed and run without rendering thumbnails in case it can't find either of
-them. 
+It will look for Arnold first, then appleseed. If neither is found it will use a Substance node
+to render the thumbnails.
 
 The sample should work on Windows, Linux and macOS.
 
@@ -245,7 +245,15 @@ Process:
 * Reads the template scene and replaces the filenames for the textures with the ones for the current material
 * Writes out the updated appleseed scene file to the temp directory
 * Invokes the appleseed command line renderer on updated appleseed scene to render the image
- 
+
+## Thumbnail rendering using sbsrender
+
+If neither appleseed nor Arnold is found it will use the the Substance Designer PBR rendering
+node to create a thumbnail.
+
+This uses an environment map to render a sphere using a Substance Designer rendering. Refer to the graph
+in designer to learn more about this feature.
+
 ## Running the sample
 
 With all this background information and all the prerequisites installed we are finally ready to run the sample.
@@ -359,9 +367,12 @@ figures out what has changed since last time you ran it.
 
 ### Python 3 on Windows
 
-When running scons on Python 3 on Windows there seems to be a problem related to the module 
+When running older versions of scons on Python 3 on Windows there seems to be a problem related to the module 
 [pywin32](https://pypi.org/project/pywin32/) and its interaction with SCons. 
-If it's installed there will be an error looking like this:
+
+Scons version 3.0.4 doesn't have this issue so please upgrade and it should go away.
+
+When the error happens it looks something like this:
 ```
 inject_thumbnail(["temp\bark.sbs"], ["data\bark.sbs", "temp\bark.png"])
 Injecting thumbnail into temp\bark.sbs...
@@ -390,4 +401,3 @@ Traceback (most recent call last):
 TypeError: decoding to str: need a bytes-like object, NoneType found
 scons: building terminated because of errors.
 ```
-The current workaround would be to uninstall the pywin32 module until we come up with a long term solution.
