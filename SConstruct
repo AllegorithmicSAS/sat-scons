@@ -6,6 +6,7 @@ from pysbs import batchtools
 import os.path
 import pathlib
 import shutil
+import platform
 import math
 
 #
@@ -32,7 +33,8 @@ THUMBNAIL_RESOLUTION = [256, 256]
 MAP_RESOLUTION = 10
 SRC_DIR = "data"
 
-GPU_ENGINE = 'd3d10pc'
+GPU_ENGINE = 'd3d10pc' if platform.system() == 'Windows' else 'ogl3'
+
 #
 # Renderer detection
 #
