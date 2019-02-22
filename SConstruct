@@ -6,7 +6,6 @@ from pysbs import batchtools
 import os.path
 import pathlib
 import shutil
-import platform
 import math
 
 #
@@ -187,8 +186,8 @@ def render_thumbnail(env, target, source):
                        "metallic@{}".format(str(source[3])),
                        "normal@{}".format(str(source[1])),
                        "roughness@{}".format(str(source[2]))],
-            set_value=["$outputsize@{rx},{ry}".format(rx= int(math.log(int(env['RESOLUTION'][0]), 2)),
-                                                      ry=int(math.log(int(env['RESOLUTION'][0]), 2)))])
+            set_value=["$outputsize@{rx},{ry}".format(rx=int(math.log(int(env['RESOLUTION'][0]), 2)),
+                                                      ry=int(math.log(int(env['RESOLUTION'][1]), 2)))])
         process.wait()
 
 
