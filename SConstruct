@@ -33,7 +33,7 @@ THUMBNAIL_RESOLUTION = [256, 256]
 MAP_RESOLUTION = 10
 SRC_DIR = "data"
 
-GPU_ENGINE = 'ogl3'
+GPU_ENGINE = 'd3d10pc'
 #
 # Renderer detection
 #
